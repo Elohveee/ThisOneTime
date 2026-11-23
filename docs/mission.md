@@ -64,7 +64,8 @@
 | Files moved or deleted after backup | Still counts as finished, so uploading then clearing local copies does not trigger re-downloads |
 | HTTP 429 | Honor `Retry-After`, otherwise wait 10 s. Maximum 5 attempts |
 | **Bandcamp client challenge** | **Pause the queue and ask the user to open Bandcamp and continue normally. Never solve, bypass, or spoof it** |
-| Expired link needing email confirmation | Mark `Needs confirmation` with a link to the item. The user completes it |
+| Expired link needing email confirmation | Detect it only when the file request returns HTML, then mark `Needs confirmation` with a link to the item. The user completes it. Never trust the page's `.email-reauth-error` element alone |
+| Sale type looks physical (`p`) | Do not skip by sale type. Use the redownload URL and download page to decide |
 | HTML or empty file returned instead of music | Stop before saving it and mark it failed |
 | Same artist and title twice | Append the item ID to the filename |
 | Illegal filename characters, long names | Sanitized and truncated in one tested function |
@@ -122,7 +123,7 @@ Toolbar click → background.ts → opens app.html
 
 ### Format selection
 
-`chooseFormat(preferences, availableFormats)` is a small pure function. It returns the first enabled preference that exists in the release's `downloads` object, or `null`. Expected Bandcamp keys, to confirm in Spike S1: `flac`, `alac`, `wav`, `aiff-lossless`, `mp3-320`, `mp3-v0`, `aac-hi`, `vorbis`.
+`chooseFormat(preferences, availableFormats)` is a small pure function. It returns the first enabled preference that exists in the release's `downloads` object, or `null`. Bandcamp keys confirmed by Spike S1: `flac`, `alac`, `wav`, `aiff-lossless`, `mp3-320`, `mp3-v0`, `aac-hi`, `vorbis`.
 
 ### Auto-unzip pipeline
 
@@ -155,13 +156,13 @@ docs/mission.md       This brief
 docs/how-it-works.md  Plain-language walkthrough
 ```
 
-### Bandcamp flow (undocumented, confirm in Spike S1)
+### Bandcamp flow (undocumented, confirmed by Spike S1 on 2026-11-22)
 
 1. `GET https://bandcamp.com/`, read `#HomepageApp[data-blob]` for `pageContext.identity`.
 2. `POST /api/fancollection/1/collection_items` with `fan_id`, `count: 100`, and `older_than_token`. Stop on an empty page, `more_available: false`, or a repeated token.
 3. Join each item to `redownload_urls` using `sale_item_type + sale_item_id`.
 4. Just before downloading, fetch the redownload page, read `#pagedata[data-blob]`, match `digital_items[].item_id`, run `chooseFormat`, and take that format's URL.
-5. Use the `statdownload` check only if Spike S1 proves it is required. Bandsnatch downloads without it.
+5. Do not call `statdownload` by default. S1 reached the file directly. Add it only if real runs show direct links failing.
 6. Stream the final URL with `fetch` into the chosen folder.
 
 ### Permissions
@@ -175,7 +176,7 @@ docs/how-it-works.md  Plain-language walkthrough
 - **Comments:** Every file opens with a structured header covering purpose, inputs and outputs, interactions, and failure modes. Every exported function has TSDoc. Every Bandcamp quirk gets a comment explaining **why** and naming the assumption.
 - **Isolation:** Only `bandcamp.ts` knows Bandcamp's data shapes, so a site change has one place to fix.
 - **Parsing:** Validate untrusted JSON before use. Render with `textContent`, never `innerHTML`.
-- **Privacy:** No analytics, crash reporting, remote code, or external servers. Signed URLs are never logged.
+- **Privacy:** No analytics, crash reporting, remote code, or external servers. Signed URLs are never logged. Bandcamp's page data includes payment and gift fields, so `bandcamp.ts` copies only an explicit allowlist of fields and never stores or logs raw blobs.
 - **Public repo safety:** Fixtures are hand-written. Never commit real account data, cookies, or signed URLs.
 
 ### UI approach
@@ -186,7 +187,7 @@ For one screen, a UI framework would add more code than it removes. The interfac
 
 | ID | Question | Pass condition |
 | :--- | :--- | :--- |
-| S1 | Does the flow work from an extension page with the user's session? | Reads the fan, a collection page, and one real file URL |
+| S1 ✓ | Does the flow work from an extension page with the user's session? | **Passed 2026-11-22.** Read the fan, two collection pages with no overlap, and the first bytes of one real ZIP |
 | S2 | Can an extension page stream Bandcamp files into a chosen folder? | One album and one track save unattended at the right paths |
 | S3 | Does a long run stay healthy? | 50 items at 3 concurrent, with pause, tab close, and resume |
 | S4 | Does folder access survive a browser restart? | The saved handle resumes with at most one Chrome permission prompt |
@@ -214,6 +215,7 @@ For one screen, a UI framework would add more code than it removes. The interfac
 - **Terms:** The Terms of Use (effective 2026-05-07) limit content to personal, non-commercial use and encourage fans to download purchases. The linked Acceptable Use Policy has not been reviewed, and the last third of the Terms was only read through a summary.
 - **Fragility:** The flow relies on undocumented endpoints and can break without notice.
 - **Known limit:** "Already downloaded" means recorded by ThisOneTime, so files added to the folder by other tools are not detected.
+- **S1 findings:** One real account and one file were tested. All 8 formats were offered, the file host returned `206` for a byte-range request, and the page's email-confirmation check gave a false positive on a working download. Byte-range resume could later avoid restarting interrupted files, but v1 keeps the simpler restart.
 - **Tab must stay open:** Downloading and unzipping run in the extension tab. Closing it pauses the run, and any in-progress item restarts on resume.
 - **Folder access:** Chrome documents the picker's restricted folders, but persistence across restarts from an extension page is unverified until Spike S4.
 - **Naming:** ThisOneTime nods to the "this one time, at band camp" line from *American Pie*. The product is not affiliated with Bandcamp or the film.
@@ -237,7 +239,7 @@ For one screen, a UI framework would add more code than it removes. The interfac
 | :--- | :--- | :--- | :--- |
 | F-01 | Public repository, MIT license, README | `✓` | |
 | F-02 | MV3 manifest, TypeScript build, tests | `○` | |
-| F-03 | Spikes S1 to S5 | `○` | Gate for all feature work |
+| F-03 | Spikes S1 to S5 | `◐` | S1 passed. S2 to S5 still gate feature work |
 
 ### Library
 
