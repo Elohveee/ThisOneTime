@@ -2,13 +2,15 @@
 
 *This one time, at Bandcamp, I backed up my whole library.*
 
-ThisOneTime is a planned Chrome extension that downloads the music you've purchased on Bandcamp, in the format you choose, with one click.
+ThisOneTime is a planned Chrome extension that downloads the music you've purchased on Bandcamp, in your best available format, unzipped and ready to play, with one click.
 
 > **Status: planning.** The extension is not built yet. See the [mission brief](docs/mission.md) for the design and progress tracker.
 
 ## Goals
 
 - **Simple:** one screen and one main button.
+- **Your format order:** rank your preferred formats, and each release downloads once in the best one available.
+- **Ready to use:** albums unzip into a folder you choose, ready to play or back up.
 - **Resumable:** pause, close the tab, and pick up where you left off.
 - **Private:** no analytics, no external servers, and no access to your password or cookies.
 - **Readable:** a small, dependency-free codebase with detailed comments throughout.
