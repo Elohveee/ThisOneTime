@@ -1,0 +1,58 @@
+<!doctype html>
+<!--
+  spike.html: the single screen for Spike S4.
+
+  Purpose:      Guide the user through choosing a folder, restarting Chrome
+                twice, and copying a privacy-safe report.
+  Interactions: spike.js changes the instructions and button for each phase.
+  Styling:      System colors only, so it follows light and dark mode.
+-->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light dark" />
+    <title>ThisOneTime S4 Spike</title>
+    <style>
+      body {
+        background: Canvas;
+        color: CanvasText;
+        font: 14px/1.5 system-ui, sans-serif;
+        margin: 0 auto;
+        max-width: 720px;
+        padding: 24px 16px;
+      }
+      main { display: flex; flex-direction: column; gap: 16px; }
+      h1, p { margin: 0; }
+      h1 { font-size: 20px; }
+      .actions { display: flex; flex-wrap: wrap; gap: 8px; }
+      button { border-radius: 8px; font: inherit; padding: 6px 14px; }
+      pre {
+        border: 1px solid GrayText;
+        border-radius: 8px;
+        margin: 0;
+        max-height: 60vh;
+        overflow: auto;
+        padding: 12px;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>ThisOneTime S4 Spike</h1>
+      <p>
+        This test checks whether Chrome remembers a folder after restarting. It
+        writes two tiny text files in a <strong>ThisOneTime S4 Test</strong>
+        folder and does not contact Bandcamp or any other website.
+      </p>
+      <p id="instructions" role="status" aria-live="polite">Loading...</p>
+      <div class="actions">
+        <button id="primary" type="button" hidden></button>
+        <button id="copy" type="button" hidden>Copy report</button>
+        <button id="reset" type="button" hidden>Start over</button>
+      </div>
+      <pre id="report" tabindex="0" aria-label="Test report" hidden></pre>
+    </main>
+    <script type="module" src="spike.js"></script>
+  </body>
+</html>

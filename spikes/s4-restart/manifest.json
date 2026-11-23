@@ -1,0 +1,15 @@
+{
+  "manifest_version": 3,
+  "name": "ThisOneTime S4 Spike",
+  "description": "Tests whether access to a chosen folder survives a Chrome restart. Does not contact any website.",
+  "version": "0.0.1",
+  "minimum_chrome_version": "122",
+  "action": {
+    "default_title": "Open the ThisOneTime S4 spike"
+  },
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "permissions": ["storage"]
+}

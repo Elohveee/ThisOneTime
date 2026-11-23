@@ -39,7 +39,7 @@
 - **Scan:** Load the full collection with a live count. Hidden items are included only when the user opts in.
 - **Format preferences:** A saved, ordered list decides the format. For each release, ThisOneTime downloads **exactly one** format: the first enabled format in the list that Bandcamp offers for that release.
 - **Default order:** FLAC, ALAC, WAV, AIFF, MP3 320, MP3 V0, AAC, Ogg Vorbis. Users can reorder formats and disable any they never want.
-- **Choose folder:** The user picks a backup folder, such as `Music/Bandcamp`. Browser rules restrict the top-level Downloads and Documents folders, so the UI suggests a subfolder.
+- **Choose folder:** The user picks a backup folder, such as `Music/Bandcamp`. Browser rules restrict the top-level Downloads and Documents folders, so the UI suggests a subfolder. Before opening Chrome's prompt, it tells the user to choose **Allow on every visit** so future runs need no permission click.
 - **Auto-unzip:** On by default. Albums are extracted to `<Artist>/<Title>/`, ready to play or upload. When off, albums stay as `<Artist>/<Artist> - <Title>.zip`.
 - **Download:** One **Download library** button runs the queue with 3 concurrent downloads (adjustable 1 to 5). One album extracts at a time to limit disk load.
 - **Control:** Pause, Resume, and Retry failed.
@@ -56,7 +56,9 @@
 | First-choice format missing | Use the next enabled format and show which one was used |
 | No enabled format available | Marked `No preferred format`, listing what Bandcamp offers. Nothing is downloaded |
 | All formats disabled | Download button disabled with an inline explanation |
-| Folder permission lost after restart | Pause. **Resume** asks Chrome to restore access to the same folder |
+| Folder permission needs renewing after a restart | Show **Reconnect folder**. One click asks Chrome to restore the same folder, then the queue resumes |
+| Folder permission denied | Stay paused and keep all progress. **Reconnect folder** can be tried again |
+| Saved folder moved or deleted | Stay paused and ask the user to choose the folder again |
 | Disk full | Pause, remove that item's temporary file, and show `Disk full` |
 | ZIP damaged or checksum mismatch | Discard partial output and retry the download. After retries, mark it failed |
 | ZIP uses an unsupported feature (for example ZIP64 or encryption) | Keep the original ZIP, mark `Kept as ZIP`, and count it as saved |
@@ -96,6 +98,7 @@ One screen, one primary action. No popup, options page, or injected Bandcamp UI.
 | Ready | Download library | Shows item count |
 | Running | Pause | Shows downloading or unzipping per item, announced politely to screen readers |
 | Paused | Resume | Shows the reason |
+| Needs folder access | Reconnect folder | Shown only when Chrome needs permission again. Explains that it takes one click |
 | Finished | Retry failed, if any | Summary |
 | Transitions | | Color shifts `150ms ease-in-out` |
 
@@ -119,7 +122,7 @@ Toolbar click → background.ts → opens app.html
 
 **Key decision: the work runs in an extension tab, not the service worker.** Service workers stop when idle and have no `DOMParser`. A pinned-open tab avoids both problems, so the worker is only a few lines.
 
-**Key decision: write through the File System Access API instead of `chrome.downloads`.** Chrome's downloads API cannot read a finished file back, so it cannot unzip it. Writing to a user-chosen folder gives one save path for albums and tracks, removes the `downloads` permission, and adds byte-level progress. If Spike S4 fails, the fallback is `chrome.downloads` with albums kept as ZIPs.
+**Key decision: write through the File System Access API instead of `chrome.downloads`.** Chrome's downloads API cannot read a finished file back, so it cannot unzip it. Writing to a user-chosen folder gives one save path for albums and tracks, removes the `downloads` permission, and adds byte-level progress. Spike S4 confirmed that the saved folder survives restarts, and that "Allow on every visit" removes the permission prompt.
 
 ### Format selection
 
@@ -190,7 +193,7 @@ For one screen, a UI framework would add more code than it removes. The interfac
 | S1 ✓ | Does the flow work from an extension page with the user's session? | **Passed 2026-11-22.** Read the fan, two collection pages with no overlap, and the first bytes of one real ZIP |
 | S2 ✓ | Can an extension page stream Bandcamp files into a chosen folder? | **Passed 2026-11-22.** One album and one track saved at the right paths, verified on disk, and played |
 | S3 | Does a long run stay healthy? | 50 items at 3 concurrent, with pause, tab close, and resume |
-| S4 | Does folder access survive a browser restart? | The saved handle resumes with at most one Chrome permission prompt |
+| S4 ✓ | Does folder access survive a browser restart? | **Passed 2026-11-22.** The saved folder worked after three restarts, with no prompt after choosing "Allow on every visit" |
 | S5 | Do real Bandcamp ZIPs extract correctly? | Real albums pass CRC-32, including a large lossless album, and play normally |
 
 ---
@@ -218,7 +221,7 @@ For one screen, a UI framework would add more code than it removes. The interfac
 - **S1 findings:** One real account and one file were tested. All 8 formats were offered, the file host returned `206` for a byte-range request, and the page's email-confirmation check gave a false positive on a working download. Byte-range resume could later avoid restarting interrupted files, but v1 keeps the simpler restart.
 - **S2 findings:** A 60.2 MB album ZIP and a 12.8 MB track streamed at 26.1 and 16.7 MB/s, with exact size matches, no save dialogs, and no leftover swap files. The ZIP passed `unzip -t` and held 3 flat entries, including cover art. Both files came from `popplers5.bandcamp.com`, so the `*.bcbits.com` permission may be removable after wider testing.
 - **Tab must stay open:** Downloading and unzipping run in the extension tab. Closing it pauses the run, and any in-progress item restarts on resume.
-- **Folder access:** Chrome documents the picker's restricted folders, but persistence across restarts from an extension page is unverified until Spike S4.
+- **S4 findings:** The folder handle survived three restarts. A one-time grant returned to `prompt` after restart. After "Allow on every visit", permission was already `granted` on the next restart. **Reconnect folder** remains the fallback for one-time grants or revoked access. Tested on one Mac and Chrome profile.
 - **Naming:** ThisOneTime nods to the "this one time, at band camp" line from *American Pie*. The product is not affiliated with Bandcamp or the film.
 
 ---
@@ -240,7 +243,7 @@ For one screen, a UI framework would add more code than it removes. The interfac
 | :--- | :--- | :--- | :--- |
 | F-01 | Public repository, MIT license, README | `✓` | |
 | F-02 | MV3 manifest, TypeScript build, tests | `○` | |
-| F-03 | Spikes S1 to S5 | `◐` | S1 and S2 passed. S3 to S5 still gate feature work |
+| F-03 | Spikes S1 to S5 | `◐` | S1, S2, and S4 passed. S3 and S5 still gate feature work |
 
 ### Library
 
@@ -274,7 +277,7 @@ For one screen, a UI framework would add more code than it removes. The interfac
 
 | ID | Feature | Status | Notes |
 | :--- | :--- | :--- | :--- |
-| Z-01 | Backup folder picker and saved access | `○` | Depends on S4 |
+| Z-01 | Backup folder picker and saved access | `○` | Includes Reconnect folder when permission is needed |
 | Z-02 | Streaming file writer | `○` | |
 | Z-03 | ZIP reader with path validation | `○` | No dependencies |
 | Z-04 | CRC-32 verification | `○` | |
