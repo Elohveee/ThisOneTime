@@ -72,6 +72,7 @@
 | Same artist and title twice | Append the item ID to the filename |
 | Illegal filename characters, long names | Sanitized and truncated in one tested function |
 | Session expires mid-run | Pause and ask the user to log in, then resume |
+| Extension opened in a second tab | A Web Lock gives one tab control. The other tab says the app is already open |
 
 ---
 
@@ -192,7 +193,7 @@ For one screen, a UI framework would add more code than it removes. The interfac
 | :--- | :--- | :--- |
 | S1 ✓ | Does the flow work from an extension page with the user's session? | **Passed 2026-11-22.** Read the fan, two collection pages with no overlap, and the first bytes of one real ZIP |
 | S2 ✓ | Can an extension page stream Bandcamp files into a chosen folder? | **Passed 2026-11-22.** One album and one track saved at the right paths, verified on disk, and played |
-| S3 | Does a long run stay healthy? | 50 items at 3 concurrent, with pause, tab close, and resume |
+| S3 ✓ | Does a long run stay healthy? | **Passed 2026-11-22.** 50 albums and 333 files verified at 3 concurrent, through 4 pauses, a tab close, and 5 resumes |
 | S4 ✓ | Does folder access survive a browser restart? | **Passed 2026-11-22.** The saved folder worked after three restarts, with no prompt after choosing "Allow on every visit" |
 | S5 ✓ | Do real Bandcamp ZIPs extract correctly? | **Passed 2026-11-22.** Three FLAC albums up to 2.8 GB (56 files) passed CRC-32 on write and read-back, and played normally |
 
@@ -220,6 +221,7 @@ For one screen, a UI framework would add more code than it removes. The interfac
 - **Known limit:** "Already downloaded" means recorded by ThisOneTime, so files added to the folder by other tools are not detected.
 - **S1 findings:** One real account and one file were tested. All 8 formats were offered, the file host returned `206` for a byte-range request, and the page's email-confirmation check gave a false positive on a working download. Byte-range resume could later avoid restarting interrupted files, but v1 keeps the simpler restart.
 - **S2 findings:** A 60.2 MB album ZIP and a 12.8 MB track streamed at 26.1 and 16.7 MB/s, with exact size matches, no save dialogs, and no leftover swap files. The ZIP passed `unzip -t` and held 3 flat entries, including cover art. Both files came from `popplers5.bandcamp.com`, so the `*.bcbits.com` permission may be removable after wider testing.
+- **S3 findings:** All 50 albums finished with no retries, rate limits, challenges, duplicate completions, or leftover temporary files. Throughput averaged 29.2 MB/s at 3 concurrent, about the same as single downloads (26 to 30 MB/s), so more concurrency is unlikely to help on this connection. Restarted transfers re-downloaded 445.5 MB across 5 interruptions (about 10% extra), making byte-range resume a worthwhile later improvement. Peak sampled heap was 193.6 MB. A full 1,000+ album run has not been tested.
 - **S5 findings:** All 56 real ZIP entries were flat, UTF-8 named, and stored without compression. Verified extraction ran at 130 to 146 MB/s, against 26 to 30 MB/s for downloads. Deflate is covered only by generated ZIPs. No album over 4 GB was encountered, so real ZIP64 behavior is unknown and those albums stay as ZIPs in v1. The test library exceeded 945 eligible albums, so queue state must scale past 1,000 releases.
 - **Tab must stay open:** Downloading and unzipping run in the extension tab. Closing it pauses the run, and any in-progress item restarts on resume.
 - **S4 findings:** The folder handle survived three restarts. A one-time grant returned to `prompt` after restart. After "Allow on every visit", permission was already `granted` on the next restart. **Reconnect folder** remains the fallback for one-time grants or revoked access. Tested on one Mac and Chrome profile.
@@ -244,7 +246,7 @@ For one screen, a UI framework would add more code than it removes. The interfac
 | :--- | :--- | :--- | :--- |
 | F-01 | Public repository, MIT license, README | `✓` | |
 | F-02 | MV3 manifest, TypeScript build, tests | `○` | |
-| F-03 | Spikes S1 to S5 | `◐` | S1, S2, S4, and S5 passed. S3 still gates feature work |
+| F-03 | Spikes S1 to S5 | `✓` | All passed on 2026-11-22 |
 
 ### Library
 
