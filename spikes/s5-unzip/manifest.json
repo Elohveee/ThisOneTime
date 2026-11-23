@@ -1,0 +1,19 @@
+{
+  "manifest_version": 3,
+  "name": "ThisOneTime S5 Spike",
+  "description": "Downloads and unzips one long album into a test folder you choose. Produces a report with no personal data.",
+  "version": "0.0.1",
+  "minimum_chrome_version": "122",
+  "action": {
+    "default_title": "Open the ThisOneTime S5 spike"
+  },
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "host_permissions": [
+    "https://bandcamp.com/*",
+    "https://*.bandcamp.com/*",
+    "https://*.bcbits.com/*"
+  ]
+}
