@@ -1,0 +1,22 @@
+# Dependencies and build output
+node_modules/
+dist/
+*.tsbuildinfo
+
+# Packaged extension builds
+*.zip
+*.crx
+*.pem
+
+# Local secrets and captured account data: never commit these
+.env
+.env.*
+!.env.example
+cookies*.txt
+cookies*.json
+captures/
+
+# System and editor files
+.DS_Store
+.vscode/
+.idea/
