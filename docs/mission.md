@@ -188,7 +188,7 @@ For one screen, a UI framework would add more code than it removes. The interfac
 | ID | Question | Pass condition |
 | :--- | :--- | :--- |
 | S1 ✓ | Does the flow work from an extension page with the user's session? | **Passed 2026-11-22.** Read the fan, two collection pages with no overlap, and the first bytes of one real ZIP |
-| S2 | Can an extension page stream Bandcamp files into a chosen folder? | One album and one track save unattended at the right paths |
+| S2 ✓ | Can an extension page stream Bandcamp files into a chosen folder? | **Passed 2026-11-22.** One album and one track saved at the right paths, verified on disk, and played |
 | S3 | Does a long run stay healthy? | 50 items at 3 concurrent, with pause, tab close, and resume |
 | S4 | Does folder access survive a browser restart? | The saved handle resumes with at most one Chrome permission prompt |
 | S5 | Do real Bandcamp ZIPs extract correctly? | Real albums pass CRC-32, including a large lossless album, and play normally |
@@ -216,6 +216,7 @@ For one screen, a UI framework would add more code than it removes. The interfac
 - **Fragility:** The flow relies on undocumented endpoints and can break without notice.
 - **Known limit:** "Already downloaded" means recorded by ThisOneTime, so files added to the folder by other tools are not detected.
 - **S1 findings:** One real account and one file were tested. All 8 formats were offered, the file host returned `206` for a byte-range request, and the page's email-confirmation check gave a false positive on a working download. Byte-range resume could later avoid restarting interrupted files, but v1 keeps the simpler restart.
+- **S2 findings:** A 60.2 MB album ZIP and a 12.8 MB track streamed at 26.1 and 16.7 MB/s, with exact size matches, no save dialogs, and no leftover swap files. The ZIP passed `unzip -t` and held 3 flat entries, including cover art. Both files came from `popplers5.bandcamp.com`, so the `*.bcbits.com` permission may be removable after wider testing.
 - **Tab must stay open:** Downloading and unzipping run in the extension tab. Closing it pauses the run, and any in-progress item restarts on resume.
 - **Folder access:** Chrome documents the picker's restricted folders, but persistence across restarts from an extension page is unverified until Spike S4.
 - **Naming:** ThisOneTime nods to the "this one time, at band camp" line from *American Pie*. The product is not affiliated with Bandcamp or the film.
@@ -239,7 +240,7 @@ For one screen, a UI framework would add more code than it removes. The interfac
 | :--- | :--- | :--- | :--- |
 | F-01 | Public repository, MIT license, README | `✓` | |
 | F-02 | MV3 manifest, TypeScript build, tests | `○` | |
-| F-03 | Spikes S1 to S5 | `◐` | S1 passed. S2 to S5 still gate feature work |
+| F-03 | Spikes S1 to S5 | `◐` | S1 and S2 passed. S3 to S5 still gate feature work |
 
 ### Library
 
