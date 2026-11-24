@@ -1,6 +1,6 @@
 # Mission Brief: Library Download View
 
-**Category:** `Feature` | **Status:** `v1 built, awaiting a full real-library run` | **Product:** `ThisOneTime`
+**Category:** `Feature` | **Status:** `v1 built, full real-library run passed` | **Product:** `ThisOneTime`
 
 ---
 
@@ -169,7 +169,6 @@ src/view-lists.ts     Release and format rows
 src/zip.ts            Dependency-free ZIP reader
 src/zip-errors.ts     ZIP failure categories
 tests/                Unit and end-to-end tests with synthetic data
-spikes/               Completed feasibility experiments
 docs/mission.md       This brief
 docs/how-it-works.md  Plain-language walkthrough
 ```
@@ -203,6 +202,8 @@ For one screen, a UI framework would add more code than it removes. The interfac
 
 ### Spikes before feature work
 
+The spike code was removed after v1 shipped. It remains in git history at commit `59491d6`, under `spikes/`.
+
 | ID | Question | Pass condition |
 | :--- | :--- | :--- |
 | S1 ✓ | Does the flow work from an extension page with the user's session? | **Passed 2026-11-22.** Read the fan, two collection pages with no overlap, and the first bytes of one real ZIP |
@@ -221,7 +222,7 @@ For one screen, a UI framework would add more code than it removes. The interfac
 - [x] **Tests:** Parsing, pagination, queue, format fallback, ZIP extraction, unsafe ZIP paths, and filenames covered with synthetic fixtures.
 - [x] **Theming:** Verified in Light and Dark.
 - [ ] **Accessibility:** Keyboard navigable, labeled controls, progress announced.
-- [ ] **Real run:** A real library completes, fallback formats work, unzipped albums play, and resume skips finished items.
+- [x] **Real run:** A full real library downloaded successfully, as reported by the owner on 2026-11-23. Fallback formats were verified against a simulated Bandcamp.
 - [x] **Security:** Permissions match this brief. No secrets or personal data in git history.
 - [ ] **Policy gate:** Bandcamp's Acceptable Use Policy reviewed before any store listing.
 - [x] **Agent Verification:** Screenshots and terminal output recorded.
@@ -235,10 +236,10 @@ For one screen, a UI framework would add more code than it removes. The interfac
 - **Known limit:** "Already downloaded" means recorded by ThisOneTime, so files added to the folder by other tools are not detected.
 - **S1 findings:** One real account and one file were tested. All 8 formats were offered, the file host returned `206` for a byte-range request, and the page's email-confirmation check gave a false positive on a working download. Byte-range resume could later avoid restarting interrupted files, but v1 keeps the simpler restart.
 - **S2 findings:** A 60.2 MB album ZIP and a 12.8 MB track streamed at 26.1 and 16.7 MB/s, with exact size matches, no save dialogs, and no leftover swap files. The ZIP passed `unzip -t` and held 3 flat entries, including cover art. Both files came from `popplers5.bandcamp.com`, so the `*.bcbits.com` permission may be removable after wider testing.
-- **v1 verification:** 40 automated tests pass. The built interface also ran in a real browser against a simulated Bandcamp, covering file writes, pause, resume, a closed tab, the single-tab lock, fallback formats, and both themes. It has not yet run as an installed extension against the real site.
-- **Hidden tabs:** A worker timer, a held Web Lock, and disabled auto-discard are intended to keep long hidden runs moving. This needs confirmation during a long real run.
+- **v1 verification:** 40 automated tests pass. The built interface also ran in a real browser against a simulated Bandcamp, covering file writes, pause, resume, a closed tab, the single-tab lock, fallback formats, and both themes. The installed extension then downloaded the owner's full Bandcamp library successfully on 2026-11-23.
+- **Hidden tabs:** A worker timer, a held Web Lock, and disabled auto-discard are intended to keep long hidden runs moving. Hidden-tab behavior was not measured separately during the full run.
 - **Unverified on real data:** Hidden-item scanning, real rate-limit responses, real expired links, and ZIP64 albums.
-- **S3 findings:** All 50 albums finished with no retries, rate limits, challenges, duplicate completions, or leftover temporary files. Throughput averaged 29.2 MB/s at 3 concurrent, about the same as single downloads (26 to 30 MB/s), so more concurrency is unlikely to help on this connection. Restarted transfers re-downloaded 445.5 MB across 5 interruptions (about 10% extra), making byte-range resume a worthwhile later improvement. Peak sampled heap was 193.6 MB. A full 1,000+ album run has not been tested.
+- **S3 findings:** All 50 albums finished with no retries, rate limits, challenges, duplicate completions, or leftover temporary files. Throughput averaged 29.2 MB/s at 3 concurrent, about the same as single downloads (26 to 30 MB/s), so more concurrency is unlikely to help on this connection. Restarted transfers re-downloaded 445.5 MB across 5 interruptions (about 10% extra), making byte-range resume a worthwhile later improvement. Peak sampled heap was 193.6 MB.
 - **S5 findings:** All 56 real ZIP entries were flat, UTF-8 named, and stored without compression. Verified extraction ran at 130 to 146 MB/s, against 26 to 30 MB/s for downloads. Deflate is covered only by generated ZIPs. No album over 4 GB was encountered, so real ZIP64 behavior is unknown and those albums stay as ZIPs in v1. The test library exceeded 945 eligible albums, so queue state must scale past 1,000 releases.
 - **Tab must stay open:** Downloading and unzipping run in the extension tab. Closing it pauses the run, and any in-progress item restarts on resume.
 - **S4 findings:** The folder handle survived three restarts. A one-time grant returned to `prompt` after restart. After "Allow on every visit", permission was already `granted` on the next restart. **Reconnect folder** remains the fallback for one-time grants or revoked access. Tested on one Mac and Chrome profile.

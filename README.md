@@ -4,7 +4,7 @@
 
 ThisOneTime is a Chrome extension that downloads the music you've purchased on Bandcamp, in your best available format, unzipped and ready to play.
 
-> **Status: v1 beta.** It has passed its feasibility spikes and automated tests, but has not completed a full real-library run yet. It relies on undocumented Bandcamp endpoints, so a site change may break it.
+> **Note:** ThisOneTime relies on undocumented Bandcamp endpoints, so a site change may break it.
 
 ## Features
 
