@@ -1,3 +1,5 @@
+<p align="center"><img src="icons/icon-256.png" alt="ThisOneTime logo" width="128" height="128"></p>
+
 # ThisOneTime
 
 *This one time, at Bandcamp, I backed up my whole library.*

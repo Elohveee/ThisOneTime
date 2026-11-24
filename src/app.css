@@ -66,6 +66,8 @@ fieldset { border: 0; min-width: 0; }
 
 .header, .row, .setting { align-items: center; display: flex; gap: 12px; }
 .header, .between, .setting { justify-content: space-between; }
+.brand { align-items: center; display: flex; gap: 12px; }
+.logo { flex: none; }
 .wrap { flex-wrap: wrap; }
 .setting { border-top: 1px solid var(--at-border); padding-top: 12px; }
 .setting.column { align-items: stretch; flex-direction: column; }

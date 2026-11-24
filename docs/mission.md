@@ -145,6 +145,7 @@ Extraction temporarily needs about twice the album's size in free disk space.
 
 ```text
 manifest.json
+icons/               Toolbar icons and page logo
 scripts/              Build helpers
 src/app.html          Page markup
 src/app.css           Tokens and styles
