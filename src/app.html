@@ -1,0 +1,96 @@
+<!doctype html>
+<!--
+  app.html: the single ThisOneTime screen.
+
+  Purpose:      Hold the static structure of the interface.
+  Interactions: app.ts handles events, and view.ts fills in live content.
+  Styling:      app.css defines all color tokens for light and dark themes.
+-->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light dark" />
+    <title>ThisOneTime</title>
+    <link rel="stylesheet" href="app.css" />
+  </head>
+  <body>
+    <main class="app">
+      <header class="header">
+        <div>
+          <h1>ThisOneTime</h1>
+          <p class="muted">Back up the music you bought on Bandcamp.</p>
+        </div>
+        <p id="account" class="muted"></p>
+      </header>
+
+      <section class="card" aria-labelledby="progress-title">
+        <div class="row between">
+          <h2 id="progress-title">Your library</h2>
+          <span id="progress-count" class="muted"></span>
+        </div>
+        <p id="status" role="status" aria-live="polite">Loading...</p>
+        <progress id="progress" max="1" value="0" aria-label="Releases finished"></progress>
+        <p id="summary" class="muted" hidden></p>
+        <div class="row">
+          <button id="primary" class="button primary" type="button"></button>
+        </div>
+      </section>
+
+      <fieldset id="settings" class="card">
+        <legend class="sr-only">Backup settings</legend>
+        <h2>Settings</h2>
+
+        <div class="setting">
+          <div>
+            <h3>Backup folder</h3>
+            <p id="folder-name" class="muted"></p>
+            <p class="muted small">
+              Use a subfolder such as Music/Bandcamp. When Chrome asks, choose
+              <strong>Allow on every visit</strong> so future runs need no extra click.
+            </p>
+          </div>
+          <button id="choose-folder" class="button" type="button">Choose folder</button>
+        </div>
+
+        <div class="setting column">
+          <div>
+            <h3 id="formats-title">Format preference</h3>
+            <p class="muted small">Each release downloads once, in the first enabled format available.</p>
+          </div>
+          <ol id="formats" class="formats" aria-labelledby="formats-title"></ol>
+        </div>
+
+        <label class="check">
+          <input id="auto-unzip" type="checkbox" />
+          <span>
+            <strong>Unzip albums automatically</strong>
+            <span class="muted small">Ready to play or back up. Needs about twice the album's size while unzipping.</span>
+          </span>
+        </label>
+
+        <label class="check">
+          <input id="include-hidden" type="checkbox" />
+          <span>
+            <strong>Include hidden items</strong>
+            <span class="muted small">Also back up items hidden on your Bandcamp profile.</span>
+          </span>
+        </label>
+      </fieldset>
+
+      <section class="card" aria-labelledby="releases-title">
+        <div class="row between wrap">
+          <h2 id="releases-title">Releases</h2>
+          <div id="filters" class="filters" role="group" aria-label="Filter releases">
+            <button class="filter" type="button" data-filter="all">All</button>
+            <button class="filter" type="button" data-filter="active">Active</button>
+            <button class="filter" type="button" data-filter="attention">Needs attention</button>
+          </div>
+        </div>
+        <ul id="releases" class="releases"></ul>
+        <p id="list-note" class="muted small" hidden></p>
+      </section>
+    </main>
+    <script type="module" src="app.js"></script>
+  </body>
+</html>

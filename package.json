@@ -1,0 +1,22 @@
+{
+  "name": "thisonetime",
+  "version": "1.0.0",
+  "description": "A simple, private Chrome extension for backing up your purchased Bandcamp library.",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "packageManager": "pnpm@10.33.0",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "clean": "node scripts/clean.mjs",
+    "typecheck": "tsc --noEmit",
+    "build": "node scripts/clean.mjs && tsc && node scripts/copy-static.mjs",
+    "test": "pnpm build && node --test tests/*.test.js"
+  },
+  "devDependencies": {
+    "@types/chrome": "0.3.7",
+    "typescript": "7.0.2"
+  }
+}

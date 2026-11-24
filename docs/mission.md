@@ -1,6 +1,6 @@
 # Mission Brief: Library Download View
 
-**Category:** `Feature` | **Status:** `Approved, not yet implemented` | **Product:** `ThisOneTime`
+**Category:** `Feature` | **Status:** `v1 built, awaiting a full real-library run` | **Product:** `ThisOneTime`
 
 ---
 
@@ -41,7 +41,7 @@
 - **Default order:** FLAC, ALAC, WAV, AIFF, MP3 320, MP3 V0, AAC, Ogg Vorbis. Users can reorder formats and disable any they never want.
 - **Choose folder:** The user picks a backup folder, such as `Music/Bandcamp`. Browser rules restrict the top-level Downloads and Documents folders, so the UI suggests a subfolder. Before opening Chrome's prompt, it tells the user to choose **Allow on every visit** so future runs need no permission click.
 - **Auto-unzip:** On by default. Albums are extracted to `<Artist>/<Title>/`, ready to play or upload. When off, albums stay as `<Artist>/<Artist> - <Title>.zip`.
-- **Download:** One **Download library** button runs the queue with 3 concurrent downloads (adjustable 1 to 5). One album extracts at a time to limit disk load.
+- **Download:** One **Download library** button runs the queue with 3 concurrent downloads. One album extracts at a time to limit disk load.
 - **Control:** Pause, Resume, and Retry failed.
 - **Resume:** Progress survives closing the tab or restarting Chrome. A release counts as finished once it is saved and verified, whichever format it used. Changing preferences later does not re-download it.
 - **Save:** Single tracks go to `<Artist>/<Title>/<Track>.<ext>`, so albums and singles share one predictable layout.
@@ -113,11 +113,13 @@ One screen, one primary action. No popup, options page, or injected Bandcamp UI.
 Toolbar click → background.ts → opens app.html
                                     │
                                     ├─ bandcamp.ts   talks to Bandcamp
+                                    ├─ library.ts    merges scans and progress
                                     ├─ queue.ts      decides what runs next
                                     ├─ formats.ts    picks the best format
                                     ├─ files.ts      streams to the chosen folder
                                     ├─ zip.ts        extracts and verifies albums
                                     ├─ storage.ts    saves settings and progress
+                                    ├─ view.ts       draws the interface
                                     └─ filenames.ts  builds safe paths
 ```
 
@@ -139,23 +141,35 @@ Toolbar click → background.ts → opens app.html
 
 Extraction temporarily needs about twice the album's size in free disk space.
 
-### Proposed repository
+### Repository
 
 ```text
 manifest.json
-src/background.ts     Opens or focuses the app tab
+scripts/              Build helpers
 src/app.html          Page markup
 src/app.css           Tokens and styles
-src/app.ts            Renders state, handles clicks
-src/bandcamp.ts       Fan, collection, and file lookups
-src/queue.ts          Concurrency, pause, retry
-src/formats.ts        Format list, defaults, and chooseFormat
+src/app.ts            Controller for clicks and startup
+src/background.ts     Opens or focuses the app tab
+src/bandcamp.ts       Requests to Bandcamp
+src/bandcamp-data.ts  Validates untrusted Bandcamp data
+src/crc32.ts          ZIP checksum
+src/dom.ts            Finds page elements
 src/files.ts          Folder access and streaming writes
-src/zip.ts            Dependency-free ZIP reader and verifier
-src/storage.ts        Typed settings, progress, and folder handle storage
 src/filenames.ts      Pure path helpers
+src/formats.ts        Format list, defaults, and chooseFormat
+src/library.ts        Pure scan, recovery, and summary rules
+src/queue.ts          Concurrency, pause, retry
+src/storage.ts        Typed IndexedDB access
+src/tab.ts            Single-tab lock and discard protection
+src/timer.ts          Cancellable background-safe delay
+src/timer-worker.ts   Timer that keeps running in hidden tabs
 src/types.ts          Shared interfaces
-tests/                Unit tests with synthetic fixtures
+src/view.ts           Main interface rendering
+src/view-lists.ts     Release and format rows
+src/zip.ts            Dependency-free ZIP reader
+src/zip-errors.ts     ZIP failure categories
+tests/                Unit and end-to-end tests with synthetic data
+spikes/               Completed feasibility experiments
 docs/mission.md       This brief
 docs/how-it-works.md  Plain-language walkthrough
 ```
@@ -171,12 +185,12 @@ docs/how-it-works.md  Plain-language walkthrough
 
 ### Permissions
 
-`storage` and host access to `https://bandcamp.com/*`, `https://*.bandcamp.com/*`, and `https://*.bcbits.com/*`. Folder access is granted by the user through Chrome's picker. No `downloads`, `cookies`, `tabs`, `scripting`, or content scripts.
+Host access to `https://bandcamp.com/*`, `https://*.bandcamp.com/*`, and `https://*.bcbits.com/*`. Folder access is granted by the user through Chrome's picker. No `storage`, `downloads`, `cookies`, `tabs`, `scripting`, or content scripts.
 
 ### Code standards
 
 - **Stack:** Strict TypeScript compiled with `tsc`. No bundler and **zero runtime dependencies**. pnpm for dev tools.
-- **Size budget:** About 1,100 lines of code, excluding comments and tests. No source file over 200.
+- **Size budget:** About 1,650 lines of code, excluding comments and tests. No source file over 200.
 - **Comments:** Every file opens with a structured header covering purpose, inputs and outputs, interactions, and failure modes. Every exported function has TSDoc. Every Bandcamp quirk gets a comment explaining **why** and naming the assumption.
 - **Isolation:** Only `bandcamp.ts` knows Bandcamp's data shapes, so a site change has one place to fix.
 - **Parsing:** Validate untrusted JSON before use. Render with `textContent`, never `innerHTML`.
@@ -201,16 +215,16 @@ For one screen, a UI framework would add more code than it removes. The interfac
 
 ## 5. Definition of Done
 
-- [ ] **Code Quality:** Strict TypeScript, no `any`, no hardcoded colors outside the token definitions.
-- [ ] **Simplicity:** Meets the size budget with zero runtime dependencies.
-- [ ] **Documentation:** Every file and export is commented to the standard above.
-- [ ] **Tests:** Parsing, pagination, queue, format fallback, ZIP extraction, unsafe ZIP paths, and filenames covered with synthetic fixtures.
-- [ ] **Theming:** Verified in Light and Dark.
+- [x] **Code Quality:** Strict TypeScript, no `any`, no hardcoded colors outside the token definitions.
+- [x] **Simplicity:** Meets the size budget with zero runtime dependencies.
+- [x] **Documentation:** Every file and export is commented to the standard above.
+- [x] **Tests:** Parsing, pagination, queue, format fallback, ZIP extraction, unsafe ZIP paths, and filenames covered with synthetic fixtures.
+- [x] **Theming:** Verified in Light and Dark.
 - [ ] **Accessibility:** Keyboard navigable, labeled controls, progress announced.
 - [ ] **Real run:** A real library completes, fallback formats work, unzipped albums play, and resume skips finished items.
-- [ ] **Security:** Permissions match this brief. No secrets or personal data in git history.
+- [x] **Security:** Permissions match this brief. No secrets or personal data in git history.
 - [ ] **Policy gate:** Bandcamp's Acceptable Use Policy reviewed before any store listing.
-- [ ] **Agent Verification:** Screenshots and terminal output recorded.
+- [x] **Agent Verification:** Screenshots and terminal output recorded.
 
 ---
 
@@ -221,6 +235,9 @@ For one screen, a UI framework would add more code than it removes. The interfac
 - **Known limit:** "Already downloaded" means recorded by ThisOneTime, so files added to the folder by other tools are not detected.
 - **S1 findings:** One real account and one file were tested. All 8 formats were offered, the file host returned `206` for a byte-range request, and the page's email-confirmation check gave a false positive on a working download. Byte-range resume could later avoid restarting interrupted files, but v1 keeps the simpler restart.
 - **S2 findings:** A 60.2 MB album ZIP and a 12.8 MB track streamed at 26.1 and 16.7 MB/s, with exact size matches, no save dialogs, and no leftover swap files. The ZIP passed `unzip -t` and held 3 flat entries, including cover art. Both files came from `popplers5.bandcamp.com`, so the `*.bcbits.com` permission may be removable after wider testing.
+- **v1 verification:** 40 automated tests pass. The built interface also ran in a real browser against a simulated Bandcamp, covering file writes, pause, resume, a closed tab, the single-tab lock, fallback formats, and both themes. It has not yet run as an installed extension against the real site.
+- **Hidden tabs:** A worker timer, a held Web Lock, and disabled auto-discard are intended to keep long hidden runs moving. This needs confirmation during a long real run.
+- **Unverified on real data:** Hidden-item scanning, real rate-limit responses, real expired links, and ZIP64 albums.
 - **S3 findings:** All 50 albums finished with no retries, rate limits, challenges, duplicate completions, or leftover temporary files. Throughput averaged 29.2 MB/s at 3 concurrent, about the same as single downloads (26 to 30 MB/s), so more concurrency is unlikely to help on this connection. Restarted transfers re-downloaded 445.5 MB across 5 interruptions (about 10% extra), making byte-range resume a worthwhile later improvement. Peak sampled heap was 193.6 MB. A full 1,000+ album run has not been tested.
 - **S5 findings:** All 56 real ZIP entries were flat, UTF-8 named, and stored without compression. Verified extraction ran at 130 to 146 MB/s, against 26 to 30 MB/s for downloads. Deflate is covered only by generated ZIPs. No album over 4 GB was encountered, so real ZIP64 behavior is unknown and those albums stay as ZIPs in v1. The test library exceeded 945 eligible albums, so queue state must scale past 1,000 releases.
 - **Tab must stay open:** Downloading and unzipping run in the extension tab. Closing it pauses the run, and any in-progress item restarts on resume.
@@ -245,55 +262,55 @@ For one screen, a UI framework would add more code than it removes. The interfac
 | ID | Feature | Status | Notes |
 | :--- | :--- | :--- | :--- |
 | F-01 | Public repository, MIT license, README | `✓` | |
-| F-02 | MV3 manifest, TypeScript build, tests | `○` | |
+| F-02 | MV3 manifest, TypeScript build, tests | `✓` | |
 | F-03 | Spikes S1 to S5 | `✓` | All passed on 2026-11-22 |
 
 ### Library
 
 | ID | Feature | Status | Notes |
 | :--- | :--- | :--- | :--- |
-| L-01 | Login detection | `○` | |
-| L-02 | Collection scan and pagination | `○` | |
-| L-03 | Hidden items opt-in | `○` | |
-| L-04 | Download-page lookup | `○` | |
+| L-01 | Login detection | `✓` | |
+| L-02 | Collection scan and pagination | `✓` | |
+| L-03 | Hidden items opt-in | `◐` | Built and tested with synthetic data |
+| L-04 | Download-page lookup | `✓` | |
 
 ### Queue
 
 | ID | Feature | Status | Notes |
 | :--- | :--- | :--- | :--- |
-| Q-01 | Concurrent queue, pause, resume | `○` | |
-| Q-02 | Persistent progress | `○` | |
-| Q-03 | Rate limit and retry handling | `○` | |
-| Q-04 | Challenge, expiry, and bad-file handling | `○` | Never bypass a challenge |
-| Q-05 | Safe filenames | `○` | |
+| Q-01 | Concurrent queue, pause, resume | `✓` | |
+| Q-02 | Persistent progress | `✓` | |
+| Q-03 | Rate limit and retry handling | `◐` | Real rate limits not yet observed |
+| Q-04 | Challenge, expiry, and bad-file handling | `◐` | Real challenges and expired links not yet observed |
+| Q-05 | Safe filenames | `✓` | |
 
 ### Format Preferences
 
 | ID | Feature | Status | Notes |
 | :--- | :--- | :--- | :--- |
-| P-01 | Saved ordered format list | `○` | |
-| P-02 | Reorder and enable controls | `○` | Keyboard accessible |
-| P-03 | `chooseFormat` fallback | `○` | Exactly one format per release |
-| P-04 | Fallback reporting | `○` | |
+| P-01 | Saved ordered format list | `✓` | |
+| P-02 | Reorder and enable controls | `✓` | Keyboard accessible |
+| P-03 | `chooseFormat` fallback | `✓` | Exactly one format per release |
+| P-04 | Fallback reporting | `✓` | |
 
 ### Files & Unzip
 
 | ID | Feature | Status | Notes |
 | :--- | :--- | :--- | :--- |
-| Z-01 | Backup folder picker and saved access | `○` | Includes Reconnect folder when permission is needed |
-| Z-02 | Streaming file writer | `○` | |
-| Z-03 | ZIP reader with path validation | `○` | No dependencies |
-| Z-04 | CRC-32 verification | `○` | |
-| Z-05 | Auto-unzip setting | `○` | On by default |
-| Z-06 | Temporary file cleanup | `○` | ZIP removed only after verification |
+| Z-01 | Backup folder picker and saved access | `✓` | Includes Reconnect folder when permission is needed |
+| Z-02 | Streaming file writer | `✓` | |
+| Z-03 | ZIP reader with path validation | `✓` | No dependencies |
+| Z-04 | CRC-32 verification | `✓` | |
+| Z-05 | Auto-unzip setting | `✓` | On by default |
+| Z-06 | Temporary file cleanup | `✓` | ZIP removed only after verification |
 
 ### Interface
 
 | ID | Feature | Status | Notes |
 | :--- | :--- | :--- | :--- |
-| U-01 | Single-page states | `○` | |
-| U-02 | Progress and results list | `○` | |
-| U-03 | Light, Dark, and accessibility pass | `○` | |
+| U-01 | Single-page states | `✓` | |
+| U-02 | Progress and results list | `✓` | |
+| U-03 | Light, Dark, and accessibility pass | `◐` | Themes verified. Full keyboard and screen reader audit pending |
 
 ### Deferred
 
@@ -301,6 +318,7 @@ For one screen, a UI framework would add more code than it removes. The interfac
 | :--- | :--- | :--- | :--- |
 | D-01 | ZIP64 extraction | `✗` | Oversized albums are kept as ZIPs in v1 |
 | D-02 | Cover art, filename templates | `✗` | Bandcamp ZIPs generally suffice for v1 |
+| D-06 | Byte-range resume | `✗` | Would avoid re-downloading interrupted files |
 | D-03 | Firefox support | `✗` | Needs a different folder-writing approach |
 | D-04 | Scheduled background sync | `✗` | Conflicts with the simple tab model |
 | D-05 | Direct upload to remote storage | `✗` | v1 writes to a folder that backup tools can watch |

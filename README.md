@@ -2,24 +2,57 @@
 
 *This one time, at Bandcamp, I backed up my whole library.*
 
-ThisOneTime is a planned Chrome extension that downloads the music you've purchased on Bandcamp, in your best available format, unzipped and ready to play, with one click.
+ThisOneTime is a Chrome extension that downloads the music you've purchased on Bandcamp, in your best available format, unzipped and ready to play.
 
-> **Status: planning.** The extension is not built yet. See the [mission brief](docs/mission.md) for the design and progress tracker.
+> **Status: v1 beta.** It has passed its feasibility spikes and automated tests, but has not completed a full real-library run yet. It relies on undocumented Bandcamp endpoints, so a site change may break it.
 
-## Goals
+## Features
 
-- **Simple:** one screen and one main button.
-- **Your format order:** rank your preferred formats, and each release downloads once in the best one available.
-- **Ready to use:** albums unzip into a folder you choose, ready to play or back up.
-- **Resumable:** pause, close the tab, and pick up where you left off.
+- **One-click backup** of your purchased library.
+- **Format preference list:** rank your formats, and each release downloads once in the best one available.
+- **Auto-unzip:** albums land in `<Artist>/<Title>/`, ready to play or sync to a remote backup.
+- **Verified files:** every unzipped file is checked with CRC-32 while writing and again after saving.
+- **Resumable:** pause, close the tab, restart Chrome, and continue where you left off.
 - **Private:** no analytics, no external servers, and no access to your password or cookies.
 - **Readable:** a small, dependency-free codebase with detailed comments throughout.
+
+## Install from source
+
+You need Node.js 20 or newer, pnpm, and Chrome 122 or newer.
+
+```bash
+pnpm install
+```
+
+```bash
+pnpm build
+```
+
+1. Open `chrome://extensions` and turn on **Developer mode**.
+2. Click **Load unpacked** and choose this project's `dist` folder.
+3. Log in to Bandcamp in Chrome.
+4. Click the ThisOneTime toolbar icon.
+
+## Using it
+
+1. Click **Choose backup folder** and pick a subfolder such as `Music/Bandcamp`.
+2. Choose **Allow on every visit** when Chrome asks, so future runs need no extra click.
+3. Adjust your format order if you like.
+4. Click **Download library** and keep the ThisOneTime tab open.
+
+Run it again later to pick up new purchases. Releases already backed up are skipped, even if you've since moved their files.
+
+## Development
+
+```bash
+pnpm test
+```
+
+Read [How it works](docs/how-it-works.md) for a tour of the code, or the [mission brief](docs/mission.md) for design decisions and test results.
 
 ## Responsible use
 
 ThisOneTime is for backing up music you bought, for your own personal use. It uses your normal logged-in browser session, limits its request rate, and never bypasses Bandcamp's security checks.
-
-It relies on undocumented Bandcamp endpoints, so a site change may break it.
 
 ## Disclaimer
 
