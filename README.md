@@ -1,14 +1,12 @@
-# ThisOneTime
+<p align="center"><img src="icons/icon-256.png" alt="ThisOneTime logo" width="128" height="128"></p>
 
-<img src="icons/icon-256.png" alt="ThisOneTime logo" width="128" height="128" align="left">
+# ThisOneTime
 
 *This one time, at Bandcamp, I backed up my whole library.*
 
 ThisOneTime is a Chrome extension that downloads the music you've purchased on Bandcamp, in your best available format, unzipped and ready to play.
 
-**Note:** ThisOneTime relies on undocumented Bandcamp endpoints, so a site change may break it.
-
-<br clear="left">
+> **Note:** ThisOneTime relies on undocumented Bandcamp endpoints, so a site change may break it.
 
 ## Features
 
