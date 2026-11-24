@@ -12,6 +12,7 @@ ThisOneTime is a Chrome extension that downloads the music you've purchased on B
 - **Format preference list:** rank your formats, and each release downloads once in the best one available.
 - **Auto-unzip:** albums land in `<Artist>/<Title>/`, ready to play or sync to a remote backup.
 - **Verified files:** every unzipped file is checked with CRC-32 while writing and again after saving.
+- **Library controls:** search your releases, browse by page, ignore what you don't want, and redownload specific albums.
 - **Resumable:** pause, close the tab, restart Chrome, and continue where you left off.
 - **Private:** no analytics, no external servers, and no access to your password or cookies.
 - **Readable:** a small, dependency-free codebase with detailed comments throughout.
@@ -41,6 +42,14 @@ pnpm build
 4. Click **Download library** and keep the ThisOneTime tab open.
 
 Run it again later to pick up new purchases. Releases already backed up are skipped, even if you've since moved their files.
+
+### Managing releases
+
+- **Search** filters by artist or title.
+- **Ignore** leaves a release out of backups without touching its files. **Stop ignoring** undoes it.
+- **Redownload** queues a finished release using your current format order. Start it with the main button. If it fails, your existing files stay in place.
+
+Pause a running backup before using row actions.
 
 ## Development
 

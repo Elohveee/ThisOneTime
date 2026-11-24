@@ -8,6 +8,7 @@
  * Safety:   Output is always one path segment, so `../` cannot escape a folder.
  */
 import { TRACK_EXTENSIONS } from "./formats.js";
+import { hasFinishedCopy } from "./release-actions.js";
 import type { FormatKey, Release } from "./types.js";
 
 /** Stays safely below the 255-byte limit of common file systems. */
@@ -76,19 +77,20 @@ export function trackFileName(release: Release, format: FormatKey): string {
 /**
  * Gives same-named releases separate folders.
  *
- * Finished releases go first and keep their existing paths, so a newly bought
- * release with the same name can never redirect or overwrite them.
+ * Finished releases, including those being redownloaded, go first and keep
+ * their existing paths, so a newly bought release with the same name can never
+ * redirect or overwrite them.
  */
 export function assignFolderSuffixes(releases: Release[]): void {
   const used = new Set<string>();
   const pathKey = (release: Release): string =>
     releaseFolders(release).join("/").normalize("NFC").toLowerCase();
   const ordered = [...releases].sort(
-    (a, b) => Number(b.status === "done") - Number(a.status === "done"),
+    (a, b) => Number(hasFinishedCopy(b)) - Number(hasFinishedCopy(a)),
   );
 
   for (const release of ordered) {
-    if (release.status !== "done") {
+    if (!hasFinishedCopy(release)) {
       release.folderSuffix = "";
       if (used.has(pathKey(release))) release.folderSuffix = ` [${safeName(release.key)}]`;
     }

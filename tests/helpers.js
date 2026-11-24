@@ -22,9 +22,14 @@ export class MemoryFolder {
     return this.folders.get(name);
   }
 
-  async getFileHandle(name) {
+  async getFileHandle(name, options = {}) {
     if (/[/\\]/.test(name)) throw new TypeError("bad name");
     const { files } = this;
+    if (!files.has(name)) {
+      if (!options.create) throw new DOMException("missing", "NotFoundError");
+      // Like Chrome, creating a handle makes an empty file right away.
+      files.set(name, new Blob([]));
+    }
     return {
       // Like Chrome, the destination changes only when the stream closes.
       async createWritable() {
@@ -156,10 +161,15 @@ export function fakeBandcamp(options = {}) {
       ? makeZip([{ name: "01.flac", data: "audio", crc: 1 }])
       : server.nested === id
         ? makeZip([{ name: "disc/01.flac", data: "audio" }])
-        : makeZip([
-            { name: `01 Song ${id}.flac`, data: `audio-${id}`.repeat(200) },
-            { name: "cover.jpg", data: `art-${id}`, method: 8 },
-          ]);
+        : server.damagedAfterFirst === id
+          ? makeZip([
+              { name: `01 Song ${id}.flac`, data: `replacement-${id}` },
+              { name: "cover.jpg", data: "bad", crc: 1 },
+            ])
+          : makeZip([
+              { name: `01 Song ${id}.flac`, data: `audio-${id}`.repeat(200) },
+              { name: "cover.jpg", data: `art-${id}`, method: 8 },
+            ]);
 
   server.fetch = async (url, init = {}) => {
     server.requests.push(url);
@@ -263,7 +273,8 @@ export function fakeBandcamp(options = {}) {
       });
       return response(body, 200, {
         "content-type": server.trackId === id ? "audio/flac" : "application/zip",
-        "content-length": String(bytes.length),
+        // A too-large length simulates a transfer that ends early.
+        "content-length": String(bytes.length + (server.truncated === id ? 1 : 0)),
       });
     }
     throw new Error(`Unexpected request: ${url}`);

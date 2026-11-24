@@ -24,7 +24,12 @@ export function getElements(): Elements {
     autoUnzip: byId("auto-unzip"),
     includeHidden: byId("include-hidden"),
     filters: byId("filters"),
+    search: byId("release-search"),
     releases: byId("releases"),
     listNote: byId("list-note"),
+    pager: byId("pager"),
+    pagePrevious: byId("page-previous"),
+    pageNext: byId("page-next"),
+    pageText: byId("page-text"),
   };
 }

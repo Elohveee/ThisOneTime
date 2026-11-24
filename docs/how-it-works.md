@@ -51,6 +51,14 @@ Every unzipped file is checked twice with a CRC-32 checksum: once while it is wr
 
 `storage.ts` saves your settings, progress, and chosen folder in this Chrome profile using IndexedDB. If the tab closes, `library.ts` returns unfinished releases to the queue the next time it opens.
 
+## Managing individual releases
+
+`release-actions.ts` holds the rules for ignoring and redownloading. `view-releases.ts` applies the filter, search, and page, in that order, using `pagination.ts`. `list-controls.ts` connects those controls to the page.
+
+- **Ignore** stores the release's key on the library, so the choice survives rescans. Files are never touched.
+- **Redownload** puts a finished release back in the queue while remembering its earlier result, so **Cancel** can restore it.
+- **File safety:** when an attempt fails, `files.ts` removes only files that attempt created. Files that already existed stay.
+
 ## Keeping long backups alive
 
 - `timer-worker.ts` keeps request pacing working while the tab is in the background.

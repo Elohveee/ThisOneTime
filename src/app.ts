@@ -15,12 +15,13 @@ import { getElements } from "./dom.js";
 import { folderAccess, requestFolderAccess } from "./files.js";
 import { moveFormat } from "./formats.js";
 import { createLibrary, mergeScan, recoverInterrupted, retryProblems } from "./library.js";
+import { connectReleaseList } from "./list-controls.js";
 import { createQueue, type QueueControls } from "./queue.js";
 import { loadFolder, loadLibrary, loadSettings, saveFolder, saveLibrary, saveSettings } from "./storage.js";
 import { claimTab, preventTabDiscard } from "./tab.js";
 import { createWorkerWait } from "./timer.js";
 import type { FormatKey } from "./types.js";
-import { renderApp, renderFormats, type AppState, type ReleaseFilter } from "./view.js";
+import { renderApp, renderFormats, type AppState } from "./view.js";
 
 const elements = getElements();
 const wait = createWorkerWait();
@@ -40,6 +41,8 @@ const state: AppState = {
   folderAccess: "none",
   scanCount: 0,
   filter: "all",
+  search: "",
+  page: 1,
   activity: new Map(),
   notice: null,
 };
@@ -194,12 +197,7 @@ elements.formats.addEventListener("click", (event) => {
   void updateSettings();
 });
 
-elements.filters.addEventListener("click", (event) => {
-  const filter = (event.target as HTMLElement).dataset.filter as ReleaseFilter | undefined;
-  if (!filter) return;
-  state.filter = filter;
-  render();
-});
+connectReleaseList(elements, state, render);
 
 /** Loads saved data, finds the fan, and scans for purchases. */
 async function boot(): Promise<void> {

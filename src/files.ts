@@ -9,8 +9,9 @@
  *           3. Read each saved file back and check CRC-32 again.
  *           4. Delete the temporary ZIP only after every file passes.
  * Failure:  Unsupported ZIPs are kept. Damaged ZIPs are removed and retried.
- * Safety:   Deletes only files it wrote during this attempt and its own
- *           `.thisonetime-tmp` folder.
+ * Safety:   After a failure, deletes only files this attempt newly created and
+ *           its own `.thisonetime-tmp` folder. Existing files are never removed,
+ *           so a failed or paused redownload cannot lose a good copy.
  */
 import { RetryableError } from "./bandcamp.js";
 import { crc32OfBlob } from "./crc32.js";
@@ -50,6 +51,24 @@ async function openFolder(
   return folder;
 }
 
+/**
+ * Opens a file, reporting whether this call created it.
+ *
+ * Chrome creates an empty file immediately, so cleanup must know which files
+ * are new and which were already the user's.
+ */
+async function openOutput(
+  folder: FileSystemDirectoryHandle,
+  name: string,
+): Promise<{ handle: FileSystemFileHandle; isNew: boolean }> {
+  try {
+    return { handle: await folder.getFileHandle(name), isNew: false };
+  } catch (error) {
+    if ((error as Error).name !== "NotFoundError") throw error;
+    return { handle: await folder.getFileHandle(name, { create: true }), isNew: true };
+  }
+}
+
 /** Streams a response into a file, committing only when the size is right. */
 async function streamToFile(
   folder: FileSystemDirectoryHandle,
@@ -57,8 +76,7 @@ async function streamToFile(
   { response, signal, onActivity }: SaveRequest,
 ): Promise<FileSystemFileHandle> {
   const expected = Number(response.headers.get("content-length")) || 0;
-  const handle = await folder.getFileHandle(name, { create: true });
-  const writable = await handle.createWritable();
+  const { handle, isNew } = await openOutput(folder, name);
   let bytes = 0;
   const counter = new TransformStream<Uint8Array, Uint8Array>({
     transform(chunk, controller) {
@@ -74,7 +92,13 @@ async function streamToFile(
   });
 
   const body = response.body as ReadableStream<Uint8Array>;
-  await body.pipeThrough(counter).pipeTo(writable as WritableStream<Uint8Array>, { signal });
+  try {
+    const writable = await handle.createWritable();
+    await body.pipeThrough(counter).pipeTo(writable as WritableStream<Uint8Array>, { signal });
+  } catch (error) {
+    if (isNew) await removeFiles(folder, [name]);
+    throw error;
+  }
   return handle;
 }
 
@@ -88,15 +112,15 @@ async function extractAlbum(zipFile: File, request: SaveRequest): Promise<void> 
   const { root, release, signal, onActivity } = request;
   const entries = await readEntries(zipFile);
   const destination = await openFolder(root, releaseFolders(release));
-  const written: string[] = [];
+  const created: string[] = [];
 
   try {
     for (const [index, entry] of entries.entries()) {
       signal.throwIfAborted();
       onActivity({ stage: "unzipping", done: index, total: entries.length });
-      const output = await destination.getFileHandle(entry.outputName, { create: true });
+      const { handle: output, isNew } = await openOutput(destination, entry.outputName);
+      if (isNew) created.push(entry.outputName);
       await extractEntry(zipFile, entry, await output.createWritable(), signal);
-      written.push(entry.outputName);
 
       // A fresh File object proves the bytes on disk are correct.
       const saved = await output.getFile();
@@ -105,7 +129,7 @@ async function extractAlbum(zipFile: File, request: SaveRequest): Promise<void> 
       }
     }
   } catch (error) {
-    await removeFiles(destination, written);
+    await removeFiles(destination, created);
     throw error;
   }
 }

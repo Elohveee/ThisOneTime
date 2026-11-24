@@ -158,18 +158,23 @@ src/files.ts          Folder access and streaming writes
 src/filenames.ts      Pure path helpers
 src/formats.ts        Format list, defaults, and chooseFormat
 src/library.ts        Pure scan, recovery, and summary rules
+src/list-controls.ts  Filter, search, page, and row action events
+src/pagination.ts     Pure page calculation
 src/queue.ts          Concurrency, pause, retry
+src/release-actions.ts  Ignore, redownload, and search rules
 src/storage.ts        Typed IndexedDB access
 src/tab.ts            Single-tab lock and discard protection
 src/timer.ts          Cancellable background-safe delay
 src/timer-worker.ts   Timer that keeps running in hidden tabs
 src/types.ts          Shared interfaces
 src/view.ts           Main interface rendering
-src/view-lists.ts     Release and format rows
+src/view-lists.ts     Format rows
+src/view-releases.ts  Release rows, search results, and pages
 src/zip.ts            Dependency-free ZIP reader
 src/zip-errors.ts     ZIP failure categories
 tests/                Unit and end-to-end tests with synthetic data
 docs/mission.md       This brief
+docs/mission-library-controls.md  Ignore, search, pagination, redownload
 docs/how-it-works.md  Plain-language walkthrough
 ```
 

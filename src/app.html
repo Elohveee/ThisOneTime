@@ -85,10 +85,24 @@
             <button class="filter" type="button" data-filter="all">All</button>
             <button class="filter" type="button" data-filter="active">Active</button>
             <button class="filter" type="button" data-filter="attention">Needs attention</button>
+            <button class="filter" type="button" data-filter="ignored">Ignored</button>
           </div>
         </div>
+        <input
+          id="release-search"
+          class="search"
+          type="search"
+          placeholder="Search artist or title"
+          aria-label="Search releases"
+          autocomplete="off"
+        />
+        <p id="list-note" class="muted small" aria-live="polite" hidden></p>
         <ul id="releases" class="releases"></ul>
-        <p id="list-note" class="muted small" hidden></p>
+        <nav id="pager" class="pager" aria-label="Release pages" hidden>
+          <button id="page-previous" class="button" type="button">Previous</button>
+          <span id="page-text" class="muted small" role="status"></span>
+          <button id="page-next" class="button" type="button">Next</button>
+        </nav>
       </section>
     </main>
     <script type="module" src="app.js"></script>

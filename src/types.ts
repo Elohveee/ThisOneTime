@@ -75,6 +75,13 @@ export interface Release {
   attempts: number;
   /** Added to folder names when two releases share an artist and title. */
   folderSuffix: string;
+  /**
+   * Present while replacing a finished copy. Holds the earlier note, and the
+   * earlier format stays in place until the new copy succeeds.
+   */
+  redownload?: { note: ReleaseNote | null };
+  /** True for a finished release absent from the latest scan. */
+  missingFromScan?: boolean;
 }
 
 /** Why the queue is not currently running. */
@@ -95,6 +102,8 @@ export interface Library {
   phase: QueuePhase;
   pauseReason: PauseReason | null;
   releases: Release[];
+  /** Release keys the user chose to leave out of backups. */
+  ignoredKeys?: string[];
 }
 
 /** Live, unsaved progress for a release being processed. */

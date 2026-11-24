@@ -5,16 +5,17 @@
  * Inputs:   An `AppState` object and references to page elements.
  * Outputs:  DOM updates only. It never changes app state or does network work.
  * Safety:   Bandcamp text is inserted with `textContent`, never `innerHTML`.
- * Lists:    Release and format rows are drawn by view-lists.ts.
+ * Lists:    Release rows are drawn by view-releases.ts, and format rows by
+ *           view-lists.ts.
  */
 import { FORMAT_LABELS } from "./formats.js";
 import { summarize, type LibrarySummary } from "./library.js";
 import type { Activity, Library, PauseReason, Settings } from "./types.js";
-import { renderReleases } from "./view-lists.js";
+import { renderReleases } from "./view-releases.js";
 
 export { renderFormats } from "./view-lists.js";
 
-export type ReleaseFilter = "all" | "active" | "attention";
+export type ReleaseFilter = "all" | "active" | "attention" | "ignored";
 export type PrimaryActionId =
   | "none"
   | "login"
@@ -34,6 +35,10 @@ export interface AppState {
   folderAccess: PermissionState | "none";
   scanCount: number;
   filter: ReleaseFilter;
+  /** Text in the search box. Not saved between visits. */
+  search: string;
+  /** The requested list page, starting at 1. Not saved between visits. */
+  page: number;
   activity: ReadonlyMap<string, Activity>;
   notice: string | null;
 }
@@ -52,8 +57,13 @@ export interface Elements {
   autoUnzip: HTMLInputElement;
   includeHidden: HTMLInputElement;
   filters: HTMLElement;
+  search: HTMLInputElement;
   releases: HTMLUListElement;
   listNote: HTMLElement;
+  pager: HTMLElement;
+  pagePrevious: HTMLButtonElement;
+  pageNext: HTMLButtonElement;
+  pageText: HTMLElement;
 }
 
 const PAUSE_TEXT: Record<PauseReason, string> = {
@@ -82,7 +92,12 @@ export function getPrimaryAction(
 
   const canDownload = state.settings.formats.some((format) => format.enabled);
   if (summary.counts.pending > 0) {
-    const label = state.library?.phase === "paused" ? "Resume" : "Download library";
+    const onlyRedownloads = summary.redownloads === summary.counts.pending;
+    const label = state.library?.phase === "paused"
+      ? "Resume"
+      : onlyRedownloads
+        ? `Redownload ${summary.redownloads}`
+        : "Download library";
     return action("start", label, !canDownload);
   }
   if (summary.counts.failed + summary.counts.attention > 0) {
@@ -104,10 +119,15 @@ function statusText(state: AppState, summary: LibrarySummary): string {
   if (library?.phase === "running") return `Backing up: ${summary.counts.active} active.`;
   if (library?.phase === "paused") return PAUSE_TEXT[library.pauseReason ?? "user"];
   if (!state.settings.formats.some((format) => format.enabled)) return "Enable at least one format.";
+  if (summary.redownloads && summary.redownloads === summary.counts.pending) {
+    const count = summary.redownloads;
+    return `${count} release${count === 1 ? "" : "s"} queued to redownload.`;
+  }
   if (summary.counts.pending === 1) return "1 release ready to back up.";
   if (summary.counts.pending > 1) return `${summary.counts.pending} releases ready to back up.`;
   if (summary.counts.failed + summary.counts.attention > 0) return "Finished. Some releases need attention.";
-  return summary.downloadable ? "Your library is backed up." : "No downloadable purchases found.";
+  if (summary.downloadable) return "Your library is backed up.";
+  return summary.ignored ? "Every release is ignored." : "No downloadable purchases found.";
 }
 
 /** Builds the completed-run summary. */
@@ -122,6 +142,7 @@ function summaryText(summary: LibrarySummary): string {
     parts.push(`${summary.counts.preorder} pre-order${summary.counts.preorder === 1 ? "" : "s"}`);
   }
   if (summary.counts.unavailable) parts.push(`${summary.counts.unavailable} not downloadable`);
+  if (summary.ignored) parts.push(`${summary.ignored} ignored`);
   return parts.filter(Boolean).join(" · ");
 }
 

@@ -39,7 +39,7 @@ test("extracts stored, deflated, and empty entries", async () => {
   assert.equal(entries.length, 3);
 
   for (const entry of entries) {
-    const handle = await folder.getFileHandle(entry.outputName);
+    const handle = await folder.getFileHandle(entry.outputName, { create: true });
     await extractEntry(zip, entry, await handle.createWritable());
   }
   assert.deepEqual(Buffer.from(await folder.files.get("01 Song.flac").arrayBuffer()), song);
@@ -81,11 +81,12 @@ for (const [label, entry, code] of [
     const zip = new Blob([makeZip([entry])]);
     const [parsed] = await readEntries(zip);
     const folder = new MemoryFolder();
-    const handle = await folder.getFileHandle("a.flac");
+    const handle = await folder.getFileHandle("a.flac", { create: true });
     await assert.rejects(
       extractEntry(zip, parsed, await handle.createWritable()),
       (error) => error.code === code,
     );
-    assert.equal(folder.files.has("a.flac"), false);
+    // Only the empty file from opening the handle remains. No bad bytes landed.
+    assert.equal(folder.files.get("a.flac").size, 0);
   });
 }

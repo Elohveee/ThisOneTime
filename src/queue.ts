@@ -1,7 +1,8 @@
 /**
  * queue.ts: decides what downloads next.
  *
- * Purpose:  Run three workers through the library's pending releases.
+ * Purpose:  Run three workers through the library's pending releases, skipping
+ *           any the user ignored.
  * Flow:     pending -> active -> done, attention, or failed.
  *           Pausing or an interruption returns active releases to pending.
  * Saving:   Each status change is saved, so a closed tab loses little progress.
@@ -12,6 +13,7 @@
  */
 import { QueueStop, type BandcampClient } from "./bandcamp.js";
 import { cleanTempFolder, saveRelease } from "./files.js";
+import { ignoredSet } from "./release-actions.js";
 import type { Activity, Library, PauseReason, Release, Settings, WaitFunction } from "./types.js";
 
 const WORKERS = 3;
@@ -48,6 +50,8 @@ export function createQueue(deps: QueueDeps): QueueControls {
   const { client, root, library, settings, onChange, wait } = deps;
   const controllers = new Set<AbortController>();
   const activity = new Map<string, Activity>();
+  // Row actions are locked during a run, so this list cannot change mid-run.
+  const ignored = ignoredSet(library);
   let stopping = false;
   let current: Promise<void> | null = null;
   let saving: Promise<void> | null = null;
@@ -111,6 +115,7 @@ export function createQueue(deps: QueueDeps): QueueControls {
     release.format = resolved.choice.key;
     release.usedFallback = resolved.choice.usedFallback;
     release.status = "done";
+    delete release.redownload;
     // A ZIP is only a problem to report when the user asked for unzipped files.
     release.note = savedAs === "zip" && settings.autoUnzip && release.kind === "album"
       ? "kept_zip"
@@ -149,7 +154,9 @@ export function createQueue(deps: QueueDeps): QueueControls {
   /** Processes releases until the queue is empty or stopped. */
   async function worker(): Promise<void> {
     while (!stopping) {
-      const release = library.releases.find((entry) => entry.status === "pending");
+      const release = library.releases.find(
+        (entry) => entry.status === "pending" && !ignored.has(entry.key),
+      );
       if (!release) return;
 
       // Claiming is synchronous, so two workers can never take one release.
